@@ -4,7 +4,7 @@
 Photo by <a href="https://unsplash.com/@quentinrogeret?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Quentin Rogeret</a> on <a href="https://unsplash.com/photos/a-window-with-a-screen-and-a-clock-on-it-OqTf1qpXC0A?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Unsplash</a>
 
 ## Overview
-This project analyzes a year's worth of transaction data for a café to uncover trends in product sales, revenue contributions, inventory inconsistencies, and underperforming items. The dataset included 10,000 rows of customer transactions with messy or incomplete attributes, requiring significant data cleaning before insight generation for CPG business.
+This project analyzes a year's worth of transaction data for a café to uncover trends in product sales, revenue contributions, inventory inconsistencies, and underperforming items. The dataset included 10,000 rows of customer transactions with messy or incomplete attributes, requiring significant data cleaning before insight generation on consumer behavior and consumer insights.
 
 ## Objective & Business Question
 This project aims to simulate a real-world business intelligence scenario by analyzing messy transaction data from a fictional café. The goal is to extract actionable insights that inform strategic decision-making in marketing, operations, and inventory control.
