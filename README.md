@@ -1,4 +1,9 @@
 # Cafe-Sales-Analysis
+By Anthony Lewis
+
+Date: 05/02/2025
+
+Date Edited: 05/25/2025
 
 ![quentin-rogeret-OqTf1qpXC0A-unsplash](https://github.com/user-attachments/assets/4caf37b7-d050-4d37-9a8d-f485c29e9439)
 Photo by <a href="https://unsplash.com/@quentinrogeret?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Quentin Rogeret</a> on <a href="https://unsplash.com/photos/a-window-with-a-screen-and-a-clock-on-it-OqTf1qpXC0A?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Unsplash</a>
