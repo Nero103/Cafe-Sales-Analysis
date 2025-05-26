@@ -4,40 +4,49 @@
 Photo by <a href="https://unsplash.com/@quentinrogeret?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Quentin Rogeret</a> on <a href="https://unsplash.com/photos/a-window-with-a-screen-and-a-clock-on-it-OqTf1qpXC0A?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Unsplash</a>
 
 ## Overview
-This project analyzes a year's worth of transaction data for a café to uncover trends in product sales, revenue contributions, inventory inconsistencies, and underperforming items. The dataset included 10,000 rows of customer transactions with messy or incomplete attributes, requiring significant data cleaning before insight generation on consumer behavior and consumer insights.
+This analysis leverages Excel, SQL, and Power BI to explore a year's worth of café transaction data (10,000 purchases). The focus is on uncovering sales drivers, low performers, revenue trends, and inventory status. Insights are drawn to support data-driven decisions for marketing, product offerings, and operational supply chain improvements.
 
 ## Objective & Business Question
-This project aims to simulate a real-world business intelligence scenario by analyzing messy transaction data from a fictional café. The goal is to extract actionable insights that inform strategic decision-making in marketing, operations, and inventory control.
+This project aims to simulate a real-world data analysis scenario by analyzing messy transaction data from a fictional café. The goal is to extract actionable insights that inform strategic decision-making in marketing, operations, and inventory control.
 
-### Central Business Question:
-How can a café improve revenue, inventory accuracy, and product performance from a year of transaction data? This question guided the entire analytical workflow and led to the development of several sub-questions:
+### Business Objective
+**Primary Question:**
+How can the café improve revenue, optimize inventory, and enhance product performance using sales data insights?
 
-- Which products are driving the most revenue, and which are underperforming?
+**Additional Questions:**
 
-- Are inventory records consistent, or do gaps suggest operational risks?
+- Which items generate the most revenue?
 
-- What seasonal or monthly trends affect customer purchasing behavior?
+- What are the most and least purchased items each month?
 
-- How can product offerings and promotions be optimized to enhance profitability?
+- Are certain products consistently underperforming?
+
+- What are the busiest months for café transactions?
+
+- Are there indicators of inventory risk?
 
 ## Data Cleaning Summary
-Data cleaning required extensive use of SQL's data definition language (DDL), to update the table with cleaned attributes, and data manipulation language (DML) for feature engineering. Below is the following done to clean the data.
+Data cleaning required extensive use of SQL's data definition language (DDL), to update the table with cleaned attributes, and data manipulation language (DML) for feature engineering. Excel and Power BI were also used to standardize and model the data for specific Power BI functions. Below is the following done to clean the data.
+
+- *cafe_sales* was saved as *dirty_cafe_sales* to retain the original raw data
 
 - Used Excel to quickly change the date data attribute from MM/DD/YYYY to a standardized format
 
-- Standardized date format to YYYY-MM-DD HH:MM:SS and extracted month values for time-based analysis.
+- Standardized date format in SQL to YYYY-MM-DD HH:MM:SS and extracted month values for time-based analysis.
 
-- Replaced 'ERROR', 'UNKNOWN', and blank strings with NULL across key columns.
+- Replaced 'ERROR', 'UNKNOWN', and blank strings with null or 'Unspecified' across key columns. This step was especially taken in Power BI's Power Query using Replace
 
-- Imputed missing numeric fields (Quantity, Price Per Unit) using the mean, after comparing to median.
+- Since the percent of null data for transaction dates was 4.6% (0.046) of the dataset, and a general rule of thumb is that less than 5% can be filtered out without impacting that data, the nulls in transaction date were filtered out; and *dirty_cafe_sales* was saved as *new_cafe_sales* for later analysis and visualization in Power BI
+
+- Imputed missing numeric fields (Quantity, Price Per Unit) using the mean, after comparing to median and mean in SQL, as seen below.
 
 ```
---Quantity Mean
+--SQL Quantity Mean
 SELECT coalesce(SUM(Quantity), NULL) / COUNT(Quantity) AS mean_amount,
 		AVG(Quantity) AS mean_amount2
 FROM new_cafe_sales;
 
---Quantity Median
+--SQL Quantity Median
 WITH Ordered AS (
 SELECT 
 	Quantity,
@@ -58,20 +67,70 @@ SELECT
 FROM Middle
 ```
 
-- Recalculated Total_Spent where possible as Quantity × Price Per Unit.
+## Data Maipulation Summary
+After cleaning the data in SQL and Power Query, further data manipulation was conducted for use in exploratory anaylsis
 
-## Key Insights & Visualizations
-After exploring and manipulating the data to uncover interesting patterns, I used ChatGPT to run my queries and creat charts from them. Prompt engineering was needed to specify the charts for consistency.
+- Recalculated Total_Spent where possible as Quantity × Price Per Unit in SQL and then in Power Query
+  
+- Extracted the Year, Month, and Day from the Transaction_Date column
 
-### Most Purchased Item by Month
+- Created a Date Table in Power BI and joined the Date Table to new-cafe_sales table, with a cardinality of one-to-many and single cross filter, for more accurate date granularity and calculations
 
-Sandwiches, Coffee, and Juice frequently dominated monthly purchases.
-
-Product preference varies monthly, indicating potential for seasonal menu targeting.
-
-![Most Purchase Item by Month](https://github.com/user-attachments/assets/62ea245e-36ca-4cd0-ab32-9739ae05de30)
+- Created Popular Products, Ranked Products, and Top Ranked Products by Month tables using DAX from prior built SQL queries for later analyses and visualizations
 
 ```
+--Dax Table: Popular Products
+Popular_Products = 
+SUMMARIZE(
+    FILTER(new_cafe_sales, new_cafe_sales[Item] <> "Unspecified"),
+    Date_Table[Month_Number],
+    new_cafe_sales[Item],
+    "Num_Of_Purchases", COUNTROWS(new_cafe_sales)
+)
+
+--Dax Table: Ranked Products
+Ranked_Products = 
+ADDCOLUMNS(
+    Popular_Products,
+    "Rank",
+    RANKX(
+        FILTER(
+            Popular_Products,
+            Popular_Products[Month_Number] = EARLIER(Popular_Products[Month_Number])
+        ),
+        [Num_Of_Purchases],
+        ,
+        DESC,
+        DENSE
+    )
+)
+
+--Dax Table: Top Ranked Products By Month
+Top_Ranked_Products_By_Month = 
+FILTER(
+    Ranked_Products,
+    [Rank] = 1
+)
+```
+
+## Key Insights & Visualizations
+After exploring, manipulating, and analyzing the data in SQL to uncover interesting patterns, Power BI was used to run my queries as in the BI tool and creat charts. DAX coding was needed to specify the charts and match findings in SQL.
+
+### Most Purchased Items by Month
+Coffee and Sandwiches are the most purchased item in a month.
+
+Juice are the most consistently purchased item throughout the year.
+
+Juice, Coffee, and Cookie also showed strong monthly performance.
+
+Across all 12 Months, purchases ranged from 94 to 115.
+
+Purchasing behavior shifts slightly by season, indicating potential for seasonal menu curation.
+
+![image](https://github.com/user-attachments/assets/4f632e81-f920-4c70-b2f9-ed89f8ea94ff)
+
+```
+--SQL Query equivalent to above DAX tables: Popular Products, Ranked Products, and Top Ranked Products By Month
 WITH popular_products AS ( 
 SELECT
 	Item,
@@ -100,15 +159,16 @@ ORDER BY Transaction_Month ASC, num_of_purchases DESC
 ```
 
 ### Revenue Contribution by Item
+Salad was the top revenue generator, contributing ~21%  ($15.2K) of total revenue ($71.74K).
 
-Salad and Sandwich generated over 34% of total café revenue.
+Sandwiches and Smoothies followed closely, each generating over $11K.
 
-Cookies and Tea were least profitable despite steady purchases.
+Cookies and Tea contributed the least to revenue despite being top transaction volumes in certain months.
 
-![Revenue Contribution By Item](https://github.com/user-attachments/assets/d5d980aa-cbe5-473b-95c9-a87f9783d93e)
+![image](https://github.com/user-attachments/assets/e72f8a72-b1c7-47cb-9ff8-753fe07618b1)
 
 ```
---Product Contributuin to Total Revenue
+--SQL Product Contribution to Total Revenue
 WITH top_products AS (
 SELECT
 	Item,
@@ -127,15 +187,16 @@ WHERE Item IS NOT NULL
 ```
 
 ### Total Revenue by Item
+Top Performers: Salad ($15.2K), Sandwich ($12.0K), Smoothie ($11.9K)
 
-Overall revenue reached $80,546.96.
+Lowest Earners: Cookie ($3.0K), Tea ($4.4K)
 
-Salad led all products with $17.3k in revenue, suggesting strong performance along with its low count of below-average transactions.
+Total Revenue: $71.74K
 
-![Total Revenue](https://github.com/user-attachments/assets/b90c986a-5398-4fed-b169-e652a5efba7d)
+![image](https://github.com/user-attachments/assets/491dfc11-f646-4d0e-bcbd-aab9c4bb00a8)
 
 ```
---Sales
+--SQL Sales
 SELECT
 	Item,
 	coalesce(SUM(Total_Spent), NULL) AS total_revenue
@@ -144,7 +205,7 @@ WHERE Item IS NOT NULL
 GROUP BY Item
 ORDER BY total_revenue DESC;
 
---Total Sales
+--SQL Total Sales
 SELECT
 	coalesce(SUM(Total_Spent), NULL) AS total_revenue
 FROM new_cafe_sales
@@ -152,15 +213,14 @@ WHERE Item IS NOT NULL;
 ```
 
 ### Monthly Total Revenue
+Revenue remained relatively stable around the mean ($6,605/month).
 
-Monthly revenue fluctuated slightly, with some months dipping below the mean ($7,074).
+Notable peaks in March, June, and October, suggesting high-traffic months and likely candidates for promotional or seasonal factors.
 
-June and October peaked, suggesting high-traffic promotional periods.
-
-![Monthly Total Revenue](https://github.com/user-attachments/assets/396a5aa5-8702-4c8d-8598-9551cebec853)
+![image](https://github.com/user-attachments/assets/7b36c370-2a70-4c41-bf34-3fe788dfe939)
 
 ```
---Sales over time
+--SQL Sales over time
 SELECT
 	Transaction_Month,
 	coalesce(SUM(Total_Spent), NULL) AS total_revenue
@@ -172,14 +232,14 @@ ORDER BY Transaction_Month ASC
 
 ### Inventory Risk
 
-Cookie and Smoothie showed the highest proportion of missing inventory data (30%), indicating supply chain or entry to inventory issues.
+Highest inventory risks flagged for Sandwich, Coffee, and Salad, each with over 37 inconsistencies.
 
-All items showed 28–31% inconsistency, flagging need for tighter inventory systems.
+In context of sales and purchase peaks by month, Cookies and Tea showed elevated levels of missing inventory records, signaling potential supply chain or data entry issues.
 
-![Inventory Risk](https://github.com/user-attachments/assets/32febfab-9d08-454f-ae57-6fe88d43634b)
+![image](https://github.com/user-attachments/assets/65744f68-afbb-4123-953f-1e158b0a4a89)
 
 ```
---Inventory
+--SQL Inventory
 WITH total_quantity AS (
 SELECT
 	Item,
@@ -200,14 +260,15 @@ ORDER BY pct_missing_inventory DESC
 
 ### Low-Performing Products
 
-Cookie, Tea, and Coffee most often generated below-average sales.
+Tea, Smoothie, Cake, and Cookie had the highest volume of below-average revenue transactions with Tea being of concern.
 
-Despite its popularity, Cookie may benefit from repositioning or bundling promotions.
+Despite moderate sales frequency, Cookies and Tea underperformed in revenue and carried inventory risk, making them a target for repositioning or bundling promotions.
+Despite its popularity, Cookie and Tea may benefit from repositioning or bundling promotions.
 
-![Low Performing Products](https://github.com/user-attachments/assets/b26abef9-9a86-40f5-9e4a-a31db4ad3bdb)
+![image](https://github.com/user-attachments/assets/189acf32-cd82-4d2c-b567-1e9d9cde7674)
 
 ```
---Find underperforming products to suggest promotions
+--SQL Find underperforming products to suggest promotions
 WITH mean_value AS (
 SELECT
 	AVG(Total_Spent) AS mean_revenue
@@ -238,14 +299,16 @@ ORDER BY num_below_average DESC
 
 ### Monthly Purchase Volume
 
-October and March had the highest purchase counts (838 and 827), suggesting a need for staffing at these months.
+October (highest) and March saw the greatest number of purchases (both above 830), indicating the need for seasonal staffing adjustments.
 
-February lagged behind, likely due to seasonal dips.
+February had the lowest transaction volume, possibly due to seasonality or reduced foot traffic.
 
-![Monthly Purchase Volume](https://github.com/user-attachments/assets/979d5928-9884-4832-9c06-dd45e8d3394a)
+Mean monthly transactions were 795
+
+![image](https://github.com/user-attachments/assets/bb3f9b10-bc2b-478a-ab36-b075e817ae08)
 
 ```
---Busiest Months of the year
+--SQL Busiest Months of the year
 SELECT
 	Transaction_Month,
 	coalesce(SUM(Total_Spent), NULL) AS total_revenue,
@@ -255,25 +318,66 @@ GROUP BY Transaction_Month
 ORDER BY num_purchases DESC
 ```
 
-## Answers and Conclusions
-1. What are the biggest sales contributors?
+## Dashboard Metrics Summary
 
-Salad, Sandwich, and Smoothie accounted for the highest revenue. These items should remain prominent in the café’s menu and promotions.
+1. Which items generate the most revenue?
 
-2. What are the most frequently purchased items?
+Salad: ~$15.2K (≈21% of total revenue)
+Sandwich: ~$12.0K
+Smoothie: ~$11.9K
 
-Sandwiches, Juice, and Coffee consistently led purchases by month.
+These three items collectively account for a significant share of the café’s annual revenue and should be core offerings in the menu strategy.
 
-3. What trends did I find in purchase behavior?
+2. What are the most and least purchased items each month?
 
-Clear monthly shifts in product popularity, with peak purchase months in October, March, June. Low-performing products like Cookie and Tea may need repositioning.
+Most purchased items by month include:
 
-4. Were there any risks or gaps in the data?
+- Juice (most frequently appearing at the top across months)
+- Sandwich, Coffee, and Cookie also rank high in several months.
 
-High inventory data inconsistency (30% missing) across items, mostly Cookies and Smoothies. However, Cookies are especially at risk due to both low performance and missing records.
+Least purchased items (based on low bar representation in monthly purchase charts):
+
+- Tea, Cake, and Smoothie appear least in top purchased products, and Cookies lag behind other items in specific months
+
+3. Are certain products consistently underperforming?
+
+Yes, the following items consistently generate below-average revenue per transaction:
+
+- Tea
+- Smoothie
+- Cake
+- Cookie
+
+Notably, Cookies stand out for having both high transaction volume and a large number of low-revenue transactions, indicating poor profitability despite popularity. A clear opportunity for repositioning or bundling strategies, especially with Tea since teas has the most below average purchases to revenue.
+
+4. What are the busiest months for café transactions?
+
+October and March had the highest purchase volumes (above 830 transactions each).
+
+These months are likely high-traffic periods, warranting increased staffing and stock level, and/or promotions.
+
+February was the least busy month.
+
+5. Are there indicators of inventory risk?
+
+Yes. The Inventory Risk by Item visualization shows:
+
+- Sandwich, Coffee, and Salad had the highest inventory discrepancies (over 37 flagged instances).
+- Tea, Cookies, Juices, and Smoothies also showed elevated inventory inconsistencies.
+- This points to potential data entry issues, supply inconsistencies, or operational tracking problems, especially concerning since some of these items are also top sellers such as Salad
+
+![image](https://github.com/user-attachments/assets/3e9ea528-a60c-45e0-b088-9b30e910d48f)
 
 ## Recommendations
-Based on purchasing trends month-to-month, I suggest that the café should increase staffing around March, June, and October as those seem to be the busiest months. Sandwiches show strong demand not only in being the most purchased items in some months but is a strong revenue driver alongside Salads. These items, especially Sandwiches, would benefit form specials or potential product line extentions. Cookies and Teas would benefit a lot from extra promotions to reposition the tems in the conumer's minds. Moreso for Cookies as they have a high risk to inventory and have the most transactions selling below the benchmarked average. Campaigns to promote cookies would best be suited for July and November, where it is the top selling item for those months.
+- Promote high-revenue items like Salad and Sandwich via combos, features, or seasonal specials.
+
+- Reposition underperformers like Cookies and Tea through targeted campaigns or bundling, especially during July and November when Cookie purchases peak.
+
+- Optimize staffing during March, June, and October to accommodate high transaction volumes.
+
+- Audit inventory systems, especially for high-risk items (e.g., Sandwiches, Coffee, Cookies), to reduce inconsistencies and ensure stock alignment with demand.
+
+- Use dashboard slicers (by quarter) to tailor promotional and operational plans per season.
 
 ## Final Takeaways
-Promote top earners like Salad and Sandwich while experimenting with bundling for underperformers like Cookies. Improve inventory tracking to ensure reliability and supply for item demand by monthly popularity. Consider seasonal marketing during high-traffic months.
+The dashboard reveals a strong opportunity to maximize café profitability through product focus, seasonal planning, and inventory control. Data visualizations support targeted actions that can directly impact customer satisfaction through item demand and revenue growth.
